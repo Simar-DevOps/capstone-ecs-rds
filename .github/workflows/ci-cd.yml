@@ -20,32 +20,40 @@ permissions:
   pull-requests: write
 
 jobs:
-  fmt-validate-plan:
+  plan:
     if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     defaults:
       run:
         working-directory: ${{ env.TF_WORKING_DIR }}
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
+
       - name: Configure AWS credentials (OIDC)
         uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: ${{ env.AWS_ROLE_ARN }}
           aws-region: ${{ env.AWS_REGION }}
+
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
         with:
           terraform_version: 1.7.5
+
       - name: Terraform Init
         run: terraform init -backend-config=backend.hcl
+
       - name: Terraform Fmt
         run: terraform fmt -check -recursive
+
       - name: Terraform Validate
         run: terraform validate
+
       - name: Terraform Plan
         run: terraform plan -no-color -out=tfplan
-      - name: Upload Plan (artifact)
+
+      - name: Upload Plan
         uses: actions/upload-artifact@v4
         with:
           name: tfplan
@@ -60,22 +68,29 @@ jobs:
       run:
         working-directory: ${{ env.TF_WORKING_DIR }}
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
+
       - name: Configure AWS credentials (OIDC)
         uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: ${{ env.AWS_ROLE_ARN }}
           aws-region: ${{ env.AWS_REGION }}
+
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
         with:
           terraform_version: 1.7.5
+
       - name: Terraform Init
         run: terraform init -backend-config=backend.hcl
+
       - name: Terraform Apply
         run: terraform apply -auto-approve
+
       - name: Get ALB DNS
-        id: outputs_alb
-        run: echo "alb=$(terraform output -raw alb_dns_name)" >> $GITHUB_OUTPUT
-      - name: Post ALB URL
-        run: echo "ALB: http://${{ steps.outputs_alb.outputs.alb }}"
+        id: tf_outputs
+        run: echo "alb=$(terraform output -raw alb_dns_name)" >> "$GITHUB_OUTPUT"
+
+      - name: Print ALB URL
+        run: echo "ALB: http://${{ steps.tf_outputs.outputs.alb }}"
