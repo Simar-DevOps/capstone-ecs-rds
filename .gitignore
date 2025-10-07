@@ -11,3 +11,8 @@ override.tf.json
 # OS/editor junk
 .DS_Store
 Thumbs.db
+
+# Terraform plan & helper files
+*.tfplan
+sse.json
+
