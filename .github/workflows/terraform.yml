@@ -1,0 +1,56 @@
+name: terraform
+
+on:
+  pull_request:
+    paths: ["infra/**"]
+  push:
+    branches: ["main"]
+    paths: ["infra/**"]
+  workflow_dispatch:
+
+permissions:
+  id-token: write
+  contents: read
+  pull-requests: write
+
+env:
+  AWS_REGION: us-east-1
+  TF_WORKING_DIR: infra
+  AWS_ROLE_ARN: arn:aws:iam::935271781612:role/GitHubActionsTerraformRole
+
+jobs:
+  plan:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    defaults: { run: { working-directory: ${{ env.TF_WORKING_DIR }} } }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ env.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+      - uses: hashicorp/setup-terraform@v3
+        with: { terraform_version: 1.7.5 }
+      - run: terraform init -backend-config=backend.hcl
+      - run: terraform fmt -check -recursive
+      - run: terraform validate
+      - name: Terraform Plan
+        run: terraform plan -no-color -out=tfplan
+      - uses: actions/upload-artifact@v4
+        with: { name: tfplan, path: infra/tfplan }
+
+  apply:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    environment: { name: production }
+    defaults: { run: { working-directory: ${{ env.TF_WORKING_DIR }} } }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ env.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+      - uses: hashicorp/setup-terraform@v3
+        with: { terraform_version: 1.7.5 }
+      - run: terraform init -backend-config=backend.hcl
+      - run: terraform apply -auto-approve
