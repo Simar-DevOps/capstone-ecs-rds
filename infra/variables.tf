@@ -53,3 +53,5 @@ variable "desired_count" {
   type    = number
   default = 2
 }
+
+# trigger after role trust
