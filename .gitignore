@@ -16,3 +16,8 @@ Thumbs.db
 *.tfplan
 sse.json
 
+
+# Terraform plan & helper files
+*.tfplan
+sse.json
+
