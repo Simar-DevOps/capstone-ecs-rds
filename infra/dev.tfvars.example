@@ -1,0 +1,32 @@
+# === Environment settings ===
+region        = "us-east-1"             # AWS region
+project_name  = "capstone"              # Used for names/tags
+
+# === App (ECS) ===
+app_image     = "ghcr.io/simar-devops/docker-flask-sample:v0.1.4"
+desired_count = 1                       # Fargate task count
+
+# === Networking (optional overrides) ===
+# vpc_cidr         = "10.0.0.0/16"
+# public_subnet_cidrs  = ["10.0.0.0/24", "10.0.1.0/24"]
+# private_subnet_cidrs = ["10.0.10.0/24", "10.0.11.0/24"]
+
+# === RDS (PostgreSQL) ===
+db_instance_class        = "db.t4g.micro"
+db_allocated_storage_gb  = 20
+db_engine_version        = "15.4"       # Adjust if your module expects a different default
+db_backup_retention_days = 0            # 0 to minimize cost for demos
+
+# Store credentials in AWS Secrets Manager (recommended).
+# The module uses a secret to fetch username/password at deploy time.
+# If your module accepts a name for that secret, set it here:
+db_secret_name = "capstone-dev-pg"      # Create this secret with username/password before apply
+
+# === ALB / Health ===
+health_check_path = "/healthz"
+
+# === Tags (optional) ===
+tags = {
+  Project = "capstone-ecs-rds"
+  Env     = "dev"
+}
