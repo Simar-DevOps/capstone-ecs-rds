@@ -20,22 +20,23 @@ Production-style 3-tier on AWS:
 - AWS account (built/tested in `us-east-1`)
 - Terraform ≥ **1.6**
 - AWS CLI
-- GitHub repo with Actions enabled and an IAM role trusted via OIDC
-
-Example role name: `GitHubActionsTerraformRole`
+- GitHub repo with Actions enabled and an IAM role trusted via OIDC  
+  Example role name: `GitHubActionsTerraformRole`
 
 ## Layout
 
+```
 infra/
-backend.hcl # S3 backend config
-versions.tf # TF + provider versions, backend "s3"
-providers.tf # aws provider + default tags
-variables.tf # inputs (region, desired_count, app_image, etc.)
-main.tf # VPC, SGs, ALB, ECS, RDS, Secrets, Logs
-outputs.tf # alb_dns_name, db_endpoint, db_secret_name
+  backend.hcl      # S3 backend config
+  versions.tf      # TF + provider versions, backend "s3"
+  providers.tf     # aws provider + default tags
+  variables.tf     # inputs (region, desired_count, app_image, etc.)
+  main.tf          # VPC, SGs, ALB, ECS, RDS, Secrets, Logs
+  outputs.tf       # alb_dns_name, db_endpoint, db_secret_name
 
 .github/workflows/
-terraform.yml # plan on PR, apply on main (approval)
+  terraform.yml    # plan on PR, apply on main (approval)
+```
 
 ## App image
 
@@ -51,23 +52,23 @@ cd infra
 terraform init -backend-config=backend.hcl
 terraform plan -out=tfplan
 terraform apply -auto-approve
+```
 
-CI/CD flow
+### CI/CD flow
 
-Open a PR touching infra/** → CI runs Plan and uploads artifacts.
+- Open a PR touching `infra/**` → CI runs **Plan** and uploads artifacts.
+- Merge to **main** → **Apply** waits for approval in **Environments → production**.
 
-Merge to main → Apply waits for approval in Environments → production.
+### Verify
 
-Verify
-
+```bash
 cd infra
 terraform output -raw alb_dns_name   # copy to browser
 # http://<ALB_DNS>/healthz  → 200 OK
+```
 
-Cost notes (important)
+## Cost notes (important)
 
-Biggest costs: RDS and NAT Gateway (ALB/Fargate are smaller).
-
-To pause costs: scale down desired_count in variables.tf; stop RDS (non-Aurora up to 7 days).
-
-Full clean-up: terraform destroy -auto-approve.
+- Biggest costs: **RDS** and **NAT Gateway** (ALB/Fargate are smaller).
+- To pause costs: scale down `desired_count` in `variables.tf`; stop RDS (non-Aurora up to 7 days).
+- Full clean-up: `terraform destroy -auto-approve`.
